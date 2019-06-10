@@ -1,3 +1,8 @@
+What is the CPU and how does it work?
+
+The computer does its primary work in a part of the machine we cannot see, a control center that converts data input to information output. This control center, called the central processing unit (CPU), is a highly complex, extensive set of electronic circuitry that executes stored program instructions.
+
+
 Computer Architecture: CPU and Components
 
 The Beginning:
@@ -71,3 +76,36 @@ Caching:
     - Usually arranged in a level hierarchy
     - Cache Miss means you're trying to access memory that is not ye tin the cache.
     - Cache Hit means the memory you want is in the cache already. 
+
+Numbers and Values:
+Values exist regardless of how we write them down.
+    - There are 12 apples:
+        - 12 apples(decimal)
+        - 1100 apples(binary)
+        - C apples(hexadecimal)
+(The number of apples is the same-- we're just writing it in different bases. Like different languages!)
+
+Number Bases:
+The number base refers to how many individual digits that number system has.
+    - Decimal has 10 digits(0, 1, 2, 3, 4, 5, 6, 7, 8, 9) so it is base 10.
+    - Binary has 2 digits (0, 1) so it is base 2. Abinary digit is called a bit for short.
+    - Hexadecimal has 16 digits(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F) so it is base 16.
+    (Hexadecimal is often called "hex" for short.)
+    - Octal has 8 digits(0, 1, 2, 3, 4, 5, 6, 7) so it is base 8. (Not frequently used.)
+
+Terminology:
+    - Byte: 8 bits. Max value: 255 decimal, FF hex. Min value 0.
+    - Nibble: 4 bits. Max value: 15 decimal, F hex. Min value 0.
+    - Octet: synonym for byte.
+    - Decimal: A base-10 numbering system, the one you already know.
+    - Hexadecimal or hex: A base-16 numbering system.
+    - Binary: A base-2 numbering system.
+    - Octal: A rarely-used base-8 numbering stysem.
+
+The Octal Trap: 
+Even though octal (base 8) is rarely used, you can specify octal numbers in many languages with a leading zero:
+    int x = 12; // Decimal
+    int y = 012; // Octal, decimal value 10!
+Don't pad decimal numbers with leading zeros!
+
+Bitwise Operations:
