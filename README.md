@@ -1,4 +1,4 @@
-# Computer Architecture hi.
+# Computer Architecture
 
 ## Project
 
