@@ -99,6 +99,28 @@ void cpu_run(struct cpu *cpu) // Implement the core of `cpu_run()`
 // * `PRN`: a pseudo-instruction that prints the numeric value stored in a
 //   register.
 // * `HLT`: halt the CPU and exit the emulator.
+switch (IR)
+    {
+      case LDI:
+        cpu->reg[operandA] = operandB;
+        cpu->PC += 3;
+        break;
+      
+      case PRN:
+        // Prints the numeric value stored in the register operandA
+        printf("** The numeric value stored in the register operandA: %d **\n", cpu->reg[operandA]);
+        cpu->PC += 2;
+        break;
+
+      case HLT:
+        running = 0; // False. Was true above. Halt the CPU.
+        cpu->PC++;
+        break;
+
+      default:
+        exit(1); // Exit the emulator.
+    }
+
 
   }
 }
