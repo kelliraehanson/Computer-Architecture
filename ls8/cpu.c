@@ -5,21 +5,6 @@
 
 #define DATA_LEN 6
 
-// ## Step 2: Add RAM functions
-// In `cpu.c`, add functions `cpu_ram_read()` and `cpu_ram_write()` that access the
-// RAM inside the `struct cpu`.
-// We'll make use of these helper function later.
-
-// ### Day 1: Get `print8.ls8` running
-// - [ ] Inventory what is here
-// - [ ] Implement `struct cpu` in `cpu.h`
-// - [ ] Add RAM functions `cpu_ram_read()` and `cpu_ram_write()`
-// - [ ] Implement `cpu_init()`
-// - [ ] Implement the core of `cpu_run()`
-// - [ ] Implement the `HLT` instruction handler
-// - [ ] Add the `LDI` instruction
-// - [ ] Add the `PRN` instruction
-
 // Add RAM functions `cpu_ram_read()` and `cpu_ram_write()`
 unsigned char cpu_ram_read(struct cpu *cpu, unsigned char address) 
 {
@@ -34,25 +19,31 @@ void cpu_ram_write(struct cpu *cpu, unsigned char address, unsigned char value)
  * Load the binary bytes from a .ls8 source file into a RAM array
  */
 
-void cpu_load(struct cpu *cpu)
+void cpu_load(struct cpu *cpu, char *fileName)
 {
-  char data[DATA_LEN] = {
-    // From print8.ls8
-    0b10000010, // LDI R0,8
-    0b00000000,
-    0b00001000,
-    0b01000111, // PRN R0
-    0b00000000,
-    0b00000001  // HLT
-  };
+    FILE *program_file = fopen(fileName, "r");
+    
+    if (program_file == NULL)
+    {
+        printf("** Error! Could not open this program: %s **\n", fileName);
+        exit(2);
+    }
 
-  int address = 0;
+    int address = 0;
+    char line[8000];
 
-  for (int i = 0; i < DATA_LEN; i++) {
-    cpu->ram[address++] = data[i];
-  }
+    while (fgets(line, sizeof(line), program_file) != NULL)
+    {
+        char *endptr;
+        unsigned char value = strtoul(line, &endptr, 2) & 0xFF;
+        if (endptr == line)
+        {
+            continue;
+        }
+        cpu_ram_write(cpu, address++, value);
+    }
 
-  // TODO: Replace this with something less hard-coded
+    fclose(program_file);
 }
 
 /**
@@ -60,14 +51,20 @@ void cpu_load(struct cpu *cpu)
  */
 void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB)
 {
+  unsigned int a = cpu->reg[regA];
+  unsigned int b = cpu->reg[regB];
+
   switch (op) {
     case ALU_MUL:
       // TODO
+      cpu->reg[regA] = a * b;
       break;
 
     // TODO: implement more ALU ops
+    
   }
 }
+
 
 /**
  * Run the CPU
@@ -82,6 +79,7 @@ void cpu_run(struct cpu *cpu) // Implement the core of `cpu_run()`
     unsigned char IR = cpu_ram_read(cpu, cpu->PC);
     printf("\n");
     printf("** The value of the current instruction: %u **\n", IR);
+    printf("\n");
 
     // 2. Figure out how many operands this next instruction requires
 
@@ -93,15 +91,9 @@ void cpu_run(struct cpu *cpu) // Implement the core of `cpu_run()`
     // 5. Do whatever the instruction should do according to the spec.
     // 6. Move the PC to the next instruction.
 
-//   This code above requires the implementation of three instructions:
-// * `LDI`: load "immediate", store a value in a register, or "set this register to
-//   this value".
-// * `PRN`: a pseudo-instruction that prints the numeric value stored in a
-//   register.
-// * `HLT`: halt the CPU and exit the emulator.
 switch (IR)
     {
-      case LDI:
+      case LDI: // Load "immediate", store a value in a register, or "set this register to this value
         cpu->reg[operandA] = operandB;
         cpu->PC += 3;
         break;
@@ -110,6 +102,11 @@ switch (IR)
         // Prints the numeric value stored in the register operandA
         printf("** The numeric value stored in the register operandA: %d **\n", cpu->reg[operandA]);
         cpu->PC += 2;
+        break;
+
+      case MUL:
+        alu(cpu, ALU_MUL, operandA, operandB);
+        cpu->PC += 3;
         break;
 
       case HLT:
