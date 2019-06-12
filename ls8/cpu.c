@@ -5,7 +5,6 @@
 
 #define DATA_LEN 6
 
-// Add RAM functions `cpu_ram_read()` and `cpu_ram_write()`
 unsigned char cpu_ram_read(struct cpu *cpu, unsigned char address) 
 {
   return cpu->ram[address];
@@ -21,29 +20,30 @@ void cpu_ram_write(struct cpu *cpu, unsigned char address, unsigned char value)
 
 void cpu_load(struct cpu *cpu, char *fileName)
 {
-    FILE *program_file = fopen(fileName, "r");
-    
-    if (program_file == NULL)
+  // file pointer
+  FILE *fp;
+  int address = 0;
+  char line[1000];
+
+  fp = fopen(fileName, "r");
+  if(fp == NULL) 
     {
         printf("** Error! Could not open this program: %s **\n", fileName);
-        exit(2);
+        exit(1);
     }
 
-    int address = 0;
-    char line[8000];
-
-    while (fgets(line, sizeof(line), program_file) != NULL)
-    {
-        char *endptr;
-        unsigned char value = strtoul(line, &endptr, 2) & 0xFF;
-        if (endptr == line)
-        {
-            continue;
-        }
-        cpu_ram_write(cpu, address++, value);
+  while (fgets(line, sizeof(line), fp) != NULL) { // loop until fgets is at the end of the file
+    char *endptr;
+    unsigned char value = strtoul(line, &endptr, 2); // cast line to binary until value is captured
+    
+    if (endptr == line) {
+      continue;
     }
 
-    fclose(program_file);
+    cpu_ram_write(cpu, address++, value); // write value to RAM @address
+  }
+
+      fclose(fp);
 }
 
 /**
@@ -51,20 +51,20 @@ void cpu_load(struct cpu *cpu, char *fileName)
  */
 void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB)
 {
-  unsigned int a = cpu->reg[regA];
-  unsigned int b = cpu->reg[regB];
-
   switch (op) {
     case ALU_MUL:
-      // TODO
-      cpu->reg[regA] = a * b;
+      cpu->reg[regA] *= cpu->reg[regB];
       break;
 
-    // TODO: implement more ALU ops
-    
+    case ALU_ADD:
+      cpu->reg[regA] += cpu->reg[regB];
+      break;
+
+    default:
+      printf("** Error! Looks like there was no instruciton for ALU provided. **\n");
+      break;
   }
 }
-
 
 /**
  * Run the CPU
@@ -74,51 +74,63 @@ void cpu_run(struct cpu *cpu) // Implement the core of `cpu_run()`
   int running = 1; // True until we get a HLT instruction
 
   while (running) {
-    // TODO
     // 1. Get the value of the current instruction (in address PC).
-    unsigned char IR = cpu_ram_read(cpu, cpu->PC);
-    printf("\n");
-    printf("** The value of the current instruction: %u **\n", IR);
-    printf("\n");
+    unsigned char IR = cpu_ram_read(cpu, cpu->PC); // Read instructions from RAM
+    // printf("** The value of the current instruction: %u **\n", IR);
+
+    unsigned char operandA = cpu_ram_read(cpu, cpu->PC + 1); // Read additional operands 
+    unsigned char operandB = cpu_ram_read(cpu, cpu->PC + 2); // Read additional operands 
 
     // 2. Figure out how many operands this next instruction requires
-
     // 3. Get the appropriate value(s) of the operands following this instruction
-    unsigned char operandA = cpu_ram_read(cpu, cpu->PC + 1);
-    unsigned char operandB = cpu_ram_read(cpu, cpu->PC + 2);
-
     // 4. switch() over it to decide on a course of action.
     // 5. Do whatever the instruction should do according to the spec.
     // 6. Move the PC to the next instruction.
 
+int number_of_operands = (IR >> 4) & 1;
 switch (IR)
     {
       case LDI: // Load "immediate", store a value in a register, or "set this register to this value
         cpu->reg[operandA] = operandB;
-        cpu->PC += 3;
         break;
       
       case PRN:
-        // Prints the numeric value stored in the register operandA
+        // Prints the numeric value stored in the register operandA (prints register)
         printf("** The numeric value stored in the register operandA: %d **\n", cpu->reg[operandA]);
-        cpu->PC += 2;
         break;
 
       case MUL:
+        // Call the ALU to execute MUL instruction
         alu(cpu, ALU_MUL, operandA, operandB);
-        cpu->PC += 3;
+        break;
+
+      case ADD:
+        alu(cpu, ALU_ADD, operandA, operandB);
+        break;
+
+      case PUSH:
+        cpu->sp--;
+        cpu_ram_write(cpu, cpu->sp, cpu->reg[operandA]);
+        break;
+
+      case POP:
+        if(cpu->sp == 244)
+        fprintf(stderr, "** Error! You ca not pop off an empty stack! **\n");
+        cpu->reg[operandA] = cpu_ram_read(cpu, cpu->sp++);
         break;
 
       case HLT:
-        running = 0; // False. Was true above. Halt the CPU.
-        cpu->PC++;
+        running = 0; // Halt. (False. Was true above.) Halt the CPU.
         break;
 
       default:
+        printf("** Error! Unknown instruction at %02x: %02x **\n", cpu->PC, IR);
         exit(1); // Exit the emulator.
     }
 
-
+    if (!number_of_operands) {
+      cpu->PC += ((IR >> 6) & 0x3) + 1;
+    }
   }
 }
 
@@ -129,7 +141,30 @@ void cpu_init(struct cpu *cpu) // Implement `cpu_init()`
 {
   // TODO: Initialize the PC and other special registers
   cpu = malloc(sizeof(struct cpu));
+  cpu->sp = 244;
   cpu->PC = 0;
   memset(cpu->reg, 0, 8);
   memset(cpu->ram, 0, 256);
 }
+
+// ## Step 11: Implement System Stack
+
+// All CPUs manage a _stack_ that can be used to store information temporarily.
+// This stack resides in main memory and typically starts at the top of memory (at
+// a high address) and grows _downward_ as things are pushed on. The LS-8 is no
+// exception to this.
+
+// Implement a system stack per the spec. Add `PUSH` and `POP` instructions. Read
+//   the beginning of the spec to see which register is the stack pointer. 
+  
+// * Values themselves should be saved in the ***portion of RAM*** _that is allocated for the stack_. 
+//   -  Use the stack pointer to modify the correct block of memory. 
+//   - Make sure you update the stack pointer appropriately as you `PUSH` and `POP` items to and from the stack.
+
+// If you run `./ls8 examples/stack.ls8` you should see the output:
+
+// ```
+// 2
+// 4
+// 1
+// ```
