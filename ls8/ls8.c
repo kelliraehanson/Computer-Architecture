@@ -5,10 +5,14 @@
 /**
  * Main
  */
-int main(int argc, char **argv[])
+int main(int argc, char *argv[])
 {
   // printf("\n");
   // printf("** argc: %d **\n", argc);
+  for (int i = 0; i < argc; i++) {
+    printf("%s\n", argv[i]);
+  }
+  
 
   if (argc != 2) // Or < 2? This will check to make sure the user typed the correct things.
     {
@@ -21,7 +25,7 @@ int main(int argc, char **argv[])
   struct cpu cpu;
 
   cpu_init(&cpu);
-  cpu_load(&cpu, argv);
+  cpu_load(&cpu, argv[1]);
   cpu_run(&cpu);
 
   return 0;

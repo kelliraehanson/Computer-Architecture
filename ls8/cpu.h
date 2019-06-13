@@ -3,11 +3,12 @@
 
 // Holds all information about the CPU
 struct cpu {
+  int fl;
   unsigned int PC; // PC
   unsigned char reg[8]; // registers (array)
   unsigned char ram[256]; // ram (array)
   int sp;
-};
+} cpu;
 // With 8 bits, our CPU has a total of 256 bytes of memory and can only compute values up to 255.
 // The CPU could support 256 instructions, as well, but we won't need them.
 
@@ -26,6 +27,10 @@ enum alu_op {
 #define MUL  0b10100010
 #define POP  0b01000110
 #define PUSH 0b01000101
+#define CALL 0b01010000
+#define RET  0b00010001
+
+
 // TODO: more instructions here. These can be used in cpu_run().
 
 // Function declarations

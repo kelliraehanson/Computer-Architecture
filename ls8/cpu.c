@@ -23,7 +23,7 @@ void cpu_load(struct cpu *cpu, char *fileName)
   // file pointer
   FILE *fp;
   int address = 0;
-  char line[1000];
+  char line[1024];
 
   fp = fopen(fileName, "r");
   if(fp == NULL) 
@@ -66,12 +66,17 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
   }
 }
 
+// void cpu_jump(struct cpu *cpu, unsigned char address){
+//   cpu->PC = cpu->reg[address];
+// }
+
 /**
  * Run the CPU
  */
 void cpu_run(struct cpu *cpu) // Implement the core of `cpu_run()`
 {
   int running = 1; // True until we get a HLT instruction
+  int inc;
 
   while (running) {
     // 1. Get the value of the current instruction (in address PC).
@@ -80,6 +85,7 @@ void cpu_run(struct cpu *cpu) // Implement the core of `cpu_run()`
 
     unsigned char operandA = cpu_ram_read(cpu, cpu->PC + 1); // Read additional operands 
     unsigned char operandB = cpu_ram_read(cpu, cpu->PC + 2); // Read additional operands 
+    // printf("hi\n");
 
     // 2. Figure out how many operands this next instruction requires
     // 3. Get the appropriate value(s) of the operands following this instruction
@@ -87,7 +93,10 @@ void cpu_run(struct cpu *cpu) // Implement the core of `cpu_run()`
     // 5. Do whatever the instruction should do according to the spec.
     // 6. Move the PC to the next instruction.
 
-int number_of_operands = (IR >> 4) & 1;
+int number_of_operands = (IR >> 6) + 1;
+// printf("%d \n", number_of_operands);
+// printf("IR = %d call = %d \n", IR, CALL);
+inc = 1;
 switch (IR)
     {
       case LDI: // Load "immediate", store a value in a register, or "set this register to this value
@@ -119,6 +128,37 @@ switch (IR)
         cpu->reg[operandA] = cpu_ram_read(cpu, cpu->sp++);
         break;
 
+      // case PUSH:
+      // cpu->reg[cpu->sp]--;
+      // cpu->ram[cpu->reg[cpu->sp]] = cpu->reg[operandA];
+      // break;
+
+      // case POP:
+      //   cpu->reg[operandA] = cpu->ram[cpu->reg[cpu->sp]];
+      //   cpu->reg[cpu->sp]++;
+      //   break;
+
+      case CALL:
+        inc = 0;
+        cpu->sp--;
+        cpu->sp = cpu->PC + number_of_operands;
+        cpu->PC = cpu->reg[operandA];
+        // printf("cpu->PC = %d\n", cpu->PC);
+        break;
+
+      case RET:
+        inc = 0;
+        cpu->PC = cpu->sp;
+        cpu->reg[cpu->sp]++;
+        inc = 0;
+        break;
+
+      // case 0b01010000:
+      //   
+      //   cpu->sp--;
+      //   cpu_ram_write(cpu, cpu->sp, cpu->PC + number_of_operands);
+      //   break;
+
       case HLT:
         running = 0; // Halt. (False. Was true above.) Halt the CPU.
         break;
@@ -128,8 +168,8 @@ switch (IR)
         exit(1); // Exit the emulator.
     }
 
-    if (!number_of_operands) {
-      cpu->PC += ((IR >> 6) & 0x3) + 1;
+    if (inc) {
+      cpu->PC += number_of_operands;
     }
   }
 }
@@ -142,29 +182,8 @@ void cpu_init(struct cpu *cpu) // Implement `cpu_init()`
   // TODO: Initialize the PC and other special registers
   cpu = malloc(sizeof(struct cpu));
   cpu->sp = 244;
+  cpu->fl = 0;
   cpu->PC = 0;
   memset(cpu->reg, 0, 8);
   memset(cpu->ram, 0, 256);
 }
-
-// ## Step 11: Implement System Stack
-
-// All CPUs manage a _stack_ that can be used to store information temporarily.
-// This stack resides in main memory and typically starts at the top of memory (at
-// a high address) and grows _downward_ as things are pushed on. The LS-8 is no
-// exception to this.
-
-// Implement a system stack per the spec. Add `PUSH` and `POP` instructions. Read
-//   the beginning of the spec to see which register is the stack pointer. 
-  
-// * Values themselves should be saved in the ***portion of RAM*** _that is allocated for the stack_. 
-//   -  Use the stack pointer to modify the correct block of memory. 
-//   - Make sure you update the stack pointer appropriately as you `PUSH` and `POP` items to and from the stack.
-
-// If you run `./ls8 examples/stack.ls8` you should see the output:
-
-// ```
-// 2
-// 4
-// 1
-// ```
