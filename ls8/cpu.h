@@ -12,14 +12,14 @@ struct cpu {
 // With 8 bits, our CPU has a total of 256 bytes of memory and can only compute values up to 255.
 // The CPU could support 256 instructions, as well, but we won't need them.
 
+
 // ALU operations
 enum alu_op {
-	ALU_MUL,
+  ALU_MUL,
   ALU_ADD
 };
 
 // Instructions
-// These use binary literals.
 #define ADD  0b10100000
 #define HLT  0b00000001
 #define LDI  0b10000010
@@ -30,11 +30,11 @@ enum alu_op {
 #define CALL 0b01010000
 #define RET  0b00010001
 
-
 // TODO: more instructions here. These can be used in cpu_run().
 
 // Function declarations
-extern void cpu_load(struct cpu *cpu, char *fileName);
+extern void cpu_load(struct cpu *cpu, char *argv[]);
+// extern void cpu_load(struct cpu *cpu, char *fileName);
 extern void cpu_init(struct cpu *cpu);
 extern void cpu_run(struct cpu *cpu);
 
